@@ -13,10 +13,10 @@ fn main() {
 //
 //
 
-#[derive(Debug)]
-struct RangeCheckConfig<F: FieldExt, const RANGE: usize> {
-    value: Column<Advice>,
-    q_range_check: Selector,
+#[derive(Debug, Clone)]
+pub struct RangeCheckConfig<F: FieldExt, const RANGE: usize> {
+    pub value: Column<Advice>,
+    pub q_range_check: Selector,
     _marker: PhantomData<F>,
 }
 
@@ -63,5 +63,60 @@ impl<F: FieldExt, const RANGE: usize> RangeCheckConfig<F, RANGE> {
                 Ok(())
             },
         )
+    }
+}
+
+const RANGE: usize = 0x8;
+#[derive(Debug, Default)]
+pub struct TestCircuit<F: FieldExt> {
+    pub value: Value<F>,
+}
+
+impl<F: FieldExt> Circuit<F> for TestCircuit<F> {
+    type Config = RangeCheckConfig<F, RANGE>;
+
+    type FloorPlanner = SimpleFloorPlanner;
+
+    fn without_witnesses(&self) -> Self {
+        Self::default()
+    }
+
+    fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
+        let value = meta.advice_column();
+        RangeCheckConfig::configure(meta, value)
+    }
+
+    fn synthesize(&self, config: Self::Config, layouter: impl Layouter<F>) -> Result<(), Error> {
+        RangeCheckConfig::assign(&config, layouter, self.value)?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use halo2_proofs::{dev::*, pasta::Fp};
+
+    #[test]
+    fn test_range_check() {
+        let k = 4;
+
+        // Successful cases
+        for i in 0..RANGE {
+            let circuit = TestCircuit {
+                value: Value::known(Fp::from(i as u64)),
+            };
+
+            let prover = MockProver::run(k, &circuit, vec![]).unwrap();
+            prover.assert_satisfied();
+        }
+
+        // Failed case
+        let circuit = TestCircuit {
+            value: Value::known(Fp::from(RANGE as u64)),
+        };
+
+        let prover = MockProver::run(k, &circuit, vec![]).unwrap();
+        assert!(prover.verify().is_err());
     }
 }
