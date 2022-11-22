@@ -49,4 +49,19 @@ impl<F: FieldExt, const RANGE: usize> RangeCheckConfig<F, RANGE> {
 
         config
     }
+
+    fn assign(&self, mut layouter: impl Layouter<F>, value: Value<F>) -> Result<(), Error> {
+        layouter.assign_region(
+            || "range-check",
+            |mut region| {
+                // Enable q_range_check
+                self.q_range_check.enable(&mut region, 0)?;
+
+                // Assign given value
+                region.assign_advice(|| "value", self.value, 0, || value)?;
+
+                Ok(())
+            },
+        )
+    }
 }
