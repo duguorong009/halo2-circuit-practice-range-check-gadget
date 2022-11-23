@@ -12,7 +12,7 @@ use halo2_proofs::{
 
 #[derive(Debug, Clone)]
 pub(super) struct RangeCheckTable<F: FieldExt, const RANGE: usize> {
-    value: TableColumn,
+    pub(super) value: TableColumn,
     _marker: PhantomData<F>,
 }
 
