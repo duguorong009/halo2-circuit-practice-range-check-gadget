@@ -37,6 +37,8 @@ impl<F: FieldExt, const RANGE: usize> RangeCheckTable<F, RANGE> {
                         offset,
                         || Value::known(F::from(i as u64)),
                     )?;
+
+                    offset += 1;
                 }
                 Ok(())
             },

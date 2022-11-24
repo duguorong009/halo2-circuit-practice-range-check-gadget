@@ -135,6 +135,8 @@ impl<F: FieldExt, const RANGE: usize, const LOOKUP_RANGE: usize> Circuit<F>
         config: Self::Config,
         mut layouter: impl Layouter<F>,
     ) -> Result<(), Error> {
+        config.table.load(&mut layouter)?;
+
         config.assign(layouter.namespace(|| "Assign value"), self.value, RANGE)?;
         config.assign(
             layouter.namespace(|| "Assign larger value"),
@@ -152,7 +154,7 @@ mod tests {
 
     #[test]
     fn test_range_check() {
-        let k = 4;
+        let k = 10;
 
         const RANGE: usize = 8; // 3 bit-length
         const LOOKUP_RANGE: usize = 256; // 8 bit-length
